@@ -62,6 +62,41 @@ Dynamic values use atomic dynamic tags:
 | Single Post | `include/singular/post` |
 | Archive | `include/archive` |
 
+### Header location script enqueue (post-hindsight)
+
+The Elementor header template does not run the PHP partial that enqueues the
+mobile-nav script, so the drawer toggle is dead on any page rendered through
+Theme Builder. Enqueue the header script from inside the bridge, not the partial:
+
+```php
+function vm_theme_location( $location, callable $fallback ) {
+    if ( 'header' === $location && wp_script_is( 'vm-nav', 'registered' ) ) {
+        wp_enqueue_script( 'vm-nav' );
+    }
+    if ( ! function_exists( 'elementor_theme_do_location' ) || ! elementor_theme_do_location( $location ) ) {
+        $fallback();
+    }
+}
+```
+
+### Shared content partials (single source for both paths)
+
+When a template body is loop-sensitive, extract the inner markup into a
+loop-free partial so the PHP fallback and the Theme Builder path print
+identical HTML. Two patterns proven in production:
+
+- **Single post:** `template-parts/content/single-body.php` — calls
+  `get_post()` + `setup_postdata()` + `wp_reset_postdata()` itself, because the
+  Theme Builder render may consume the main loop before the partial runs.
+  The Theme Builder template then renders `[vm_partial name="content/single-body"]`.
+- **Archive:** `template-parts/content/archive-grouped.php` renders the
+  grouped list via a custom widget (`vm_archive_grouped`), while
+  `template-parts/content/archive.php` is the fallback; both delegate each
+  card to a shared `template-parts/content/blog-card.php` so grouped and
+  fallback paths render the same premium card.
+
+Do not duplicate the card/body markup in both paths; extract once.
+
 ### Elementor CSS reset conflict
 
 `.elementor img{height:auto}` and `.elementor a{text-decoration:none}` are

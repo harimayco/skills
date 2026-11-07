@@ -60,4 +60,6 @@ Open each template in the Elementor editor (via admin cookie HTTP request):
 ### Fallback verification
 
 Draft all Theme Builder templates, flush caches, verify all URLs return 200
-with the PHP partial markup (the "before" state).
+with the PHP partial markup (the "before" state). Then republish and
+re-verify the same URLs render the Theme Builder path with identical text
+hashes (inside the acceptable delta table above).
